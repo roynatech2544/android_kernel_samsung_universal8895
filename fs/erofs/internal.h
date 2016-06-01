@@ -18,6 +18,9 @@
 #include <linux/vmalloc.h>
 #include "erofs_fs.h"
 
+// smp_cond_load_relaxed() - 4.4
+#include <asm-generic/barrier.h>
+
 /* redefine pr_fmt "erofs: " */
 #undef pr_fmt
 #define pr_fmt(fmt) "erofs: " fmt
