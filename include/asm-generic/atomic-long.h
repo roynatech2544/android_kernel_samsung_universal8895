@@ -188,3 +188,5 @@ static inline long atomic_long_add_unless(atomic_long_t *l, long a, long u)
 	ATOMIC_LONG_PFX(_inc_not_zero)((ATOMIC_LONG_PFX(_t) *)(l))
 
 #endif  /*  _ASM_GENERIC_ATOMIC_LONG_H  */
+#define atomic_long_cond_read_relaxed(v, c) \
+	ATOMIC_LONG_PFX(_cond_read_relaxed)((ATOMIC_LONG_PFX(_t) *)(v), (c))

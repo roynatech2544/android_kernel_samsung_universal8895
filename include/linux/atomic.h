@@ -562,3 +562,5 @@ static inline void atomic64_andnot(long long i, atomic64_t *v)
 #include <asm-generic/atomic-long.h>
 
 #endif /* _LINUX_ATOMIC_H */
+#define atomic_cond_read_relaxed(v, c)	smp_cond_load_relaxed(&(v)->counter, (c))
+#define atomic64_cond_read_relaxed(v, c)	smp_cond_load_relaxed(&(v)->counter, (c))
