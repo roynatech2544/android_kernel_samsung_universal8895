@@ -25,6 +25,11 @@ int iterate_dir(struct file *file, struct dir_context *ctx)
 {
 	struct inode *inode = file_inode(file);
 	int res = -ENOTDIR;
+	bool shared = false;
+
+	if (file->f_op->iterate_shared)
+		shared = true;
+
 	if (!file->f_op->iterate)
 		goto out;
 
@@ -39,7 +44,10 @@ int iterate_dir(struct file *file, struct dir_context *ctx)
 	res = -ENOENT;
 	if (!IS_DEADDIR(inode)) {
 		ctx->pos = file->f_pos;
-		res = file->f_op->iterate(file, ctx);
+		if (shared)
+			res = file->f_op->iterate_shared(file, ctx);
+		else
+			res = file->f_op->iterate(file, ctx);
 		file->f_pos = ctx->pos;
 		fsnotify_access(file);
 		file_accessed(file);
