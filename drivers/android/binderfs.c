@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0 */
 
-#include <linux/compiler_types.h>
+#include <linux/compiler.h>
 #include <linux/errno.h>
 #include <linux/fs.h>
 #include <linux/fsnotify.h>
@@ -395,14 +395,13 @@ static inline bool is_binderfs_control_device(const struct dentry *dentry)
 }
 
 static int binderfs_rename(struct inode *old_dir, struct dentry *old_dentry,
-			   struct inode *new_dir, struct dentry *new_dentry,
-			   unsigned int flags)
+			   struct inode *new_dir, struct dentry *new_dentry)
 {
 	if (is_binderfs_control_device(old_dentry) ||
 	    is_binderfs_control_device(new_dentry))
 		return -EPERM;
 
-	return simple_rename(old_dir, old_dentry, new_dir, new_dentry, flags);
+	return simple_rename(old_dir, old_dentry, new_dir, new_dentry);
 }
 
 static int binderfs_unlink(struct inode *dir, struct dentry *dentry)
