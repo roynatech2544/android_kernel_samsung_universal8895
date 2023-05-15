@@ -6089,9 +6089,6 @@ const struct file_operations binder_fops = {
 	.release = binder_release,
 };
 
-BINDER_DEBUG_ENTRY(state);
-BINDER_DEBUG_ENTRY(stats);
-BINDER_DEBUG_ENTRY(transactions);
 BINDER_DEBUG_ENTRY(transaction_log);
 
 static int __init init_binder_device(const char *name)
