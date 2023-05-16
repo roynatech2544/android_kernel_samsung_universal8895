@@ -1372,6 +1372,7 @@ static void show_aid_log(struct panel_info *panel_data, int id)
 static ssize_t aid_log_show(struct device *dev,
 	struct device_attribute *attr, char *buf)
 {
+#if 0
 	struct panel_info *panel_data;
 	struct panel_device *panel = dev_get_drvdata(dev);
 
@@ -1382,12 +1383,11 @@ static ssize_t aid_log_show(struct device *dev,
 	panel_data = &panel->panel_data;
 
 	print_panel_resource(panel);
-
 	show_aid_log(panel_data, PANEL_BL_SUBDEV_TYPE_DISP);
 #ifdef CONFIG_SUPPORT_HMD
 	show_aid_log(panel_data, PANEL_BL_SUBDEV_TYPE_HMD);
 #endif
-
+#endif
 	return strlen(buf);
 }
 #endif /* CONFIG_PANEL_AID_DIMMING */

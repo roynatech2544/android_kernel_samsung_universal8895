@@ -167,7 +167,7 @@ static int init_dimming(struct panel_info *panel_data, int id,
 		for (j = 0; j < GAMMA_CMD_CNT - 1; j++)
 			len += snprintf(strbuf + len, max(1024 - len, 0),
 					"%02X ", gamma_maptbl->arr[i * gamma_maptbl->ncol + j]);
-		pr_info("%s\n", strbuf);
+		pr_debug("%s\n", strbuf);
 	}
 
 	return 0;
