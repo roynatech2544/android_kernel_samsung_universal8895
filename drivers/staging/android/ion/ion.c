@@ -119,6 +119,7 @@ struct ion_client {
  * @node:		node in the client's handle rbtree
  * @kmap_cnt:		count of times this client has mapped to kernel
  * @id:			client-unique id allocated by client->idr
+ * @modified:		Whether it was changed by hack
  *
  * Modifications to node, map_cnt or mapping should be protected by the
  * lock in the client.  Other fields are never changed after initialization.
@@ -131,6 +132,7 @@ struct ion_handle {
 	struct rb_node node;
 	unsigned int kmap_cnt;
 	int id;
+	bool modified;
 };
 
 struct ion_device *g_idev;
@@ -824,7 +826,7 @@ static size_t ion_buffer_get_total_size_by_pid(struct ion_client *client)
 
 static struct ion_handle *__ion_alloc(struct ion_client *client, size_t len,
 			     size_t align, unsigned int heap_id_mask,
-			     unsigned int flags, bool grab_handle)
+			     unsigned int flags, bool grab_handle, bool mod)
 {
 	struct ion_handle *handle;
 	struct ion_device *dev = client->dev;
@@ -888,6 +890,7 @@ static struct ion_handle *__ion_alloc(struct ion_client *client, size_t len,
 	}
 
 	handle = ion_handle_create(client, buffer);
+	handle->modified = mod;
 
 	/*
 	 * ion_buffer_create will create a buffer with a ref_cnt of 1,
@@ -924,7 +927,7 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 			     size_t align, unsigned int heap_id_mask,
 			     unsigned int flags)
 {
-	return __ion_alloc(client, len, align, heap_id_mask, flags, false);
+	return __ion_alloc(client, len, align, heap_id_mask, flags, false, false);
 }
 EXPORT_SYMBOL(ion_alloc);
 
@@ -988,6 +991,14 @@ int ion_phys(struct ion_client *client, struct ion_handle *handle,
 	if (!buffer->heap->ops->phys) {
 		pr_err("%s: ion_phys is not implemented by this heap (name=%s, type=%d).\n",
 			__func__, buffer->heap->name, buffer->heap->type);
+		if (handle->modified) {
+			struct ion_buffer_info *info = buffer->priv_virt;
+			pr_debug("%s: Using modified impl\n", __func__);
+			*addr = info->handle;
+			*len = buffer->size;
+			mutex_unlock(&client->lock);
+			return 0;
+		}
 		mutex_unlock(&client->lock);
 		return -ENODEV;
 	}
@@ -1982,11 +1993,19 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	case ION_IOC_ALLOC:
 	{
 		struct ion_handle *handle;
+		bool changed = false;
+
+		if (from_kuid_munged(current_user_ns(), current_uid()) == 1013 /* AID_MEDIA */) {
+			if (data.allocation.heap_id_mask == ION_HEAP_TYPE_DMA_MASK) {
+				data.allocation.heap_id_mask = ION_HEAP_CARVEOUT_MASK;
+				changed = true;
+			}
+		}
 
 		handle = __ion_alloc(client, data.allocation.len,
 						data.allocation.align,
 						data.allocation.heap_id_mask,
-						data.allocation.flags, true);
+						data.allocation.flags, true, changed);
 		if (IS_ERR(handle)) {
 			pr_err("%s: len %zu align %zu heap_id_mask %u flags %x (ret %ld)\n",
 				__func__, data.allocation.len,
