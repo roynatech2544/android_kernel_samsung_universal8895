@@ -401,7 +401,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security -Wno-logical-not-parentheses -Wno-format-extra-args -Wno-enum-compare \
 		   -std=gnu89 $(call cc-option,-fno-PIE)
-KBUILD_CFLAGS	+= -Wno-unused-variable -Wno-unused-but-set-variable
+KBUILD_CFLAGS	+= -Wno-unused-variable $(call cc-option, -Wno-unused-but-set-variable)
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
@@ -665,13 +665,12 @@ ifeq ($(cc-name),clang)
 KBUILD_CFLAGS	+= -mllvm -polly \
 		   -mllvm -polly-run-dce \
 		   -mllvm -polly-run-inliner \
-		   -mllvm -polly-loopfusion-greedy \
+		   $(call cc-option, -mllvm -polly-loopfusion-greedy) \
+		   $(call cc-option, -mllvm -polly-opt-fusion=max) \
 		   -mllvm -polly-ast-use-context \
 		   -mllvm -polly-detect-keep-going \
 		   -mllvm -polly-vectorizer=stripmine \
 		   -mllvm -polly-invariant-load-hoisting
-else
-KBUILD_CFLAGS	+=
 endif
 endif
 
