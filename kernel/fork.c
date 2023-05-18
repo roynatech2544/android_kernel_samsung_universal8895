@@ -1316,7 +1316,8 @@ static void pidfd_show_fdinfo(struct seq_file *m, struct file *f)
 	struct pid_namespace *ns = file_inode(m->file)->i_sb->s_fs_info;
 	struct pid *pid = f->private_data;
 
-	seq_put_decimal_ull(m, "Pid:\t", pid_nr_ns(pid, ns));
+	seq_puts(m, "Pid:");
+	seq_put_decimal_ull(m, '\t', pid_nr_ns(pid, ns));
 	seq_putc(m, '\n');
 }
 #endif

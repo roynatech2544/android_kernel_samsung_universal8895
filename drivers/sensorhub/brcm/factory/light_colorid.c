@@ -514,7 +514,7 @@ ssize_t light_hiddenhole_version_store(struct device *dev,
 {
 	char temp;
 	int version = -1, iRet = 0;
-	char str_ids[COLOR_ID_IDS_LENGTH] = "";
+	char str_ids[COLOR_ID_IDS_LENGTH + 1] = "";
 	char *str;
 
 	pr_info("[SSP] %s - %s\n", __func__, buf);

@@ -400,6 +400,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security -Wno-logical-not-parentheses -Wno-format-extra-args -Wno-enum-compare \
 		   -std=gnu89 $(call cc-option,-fno-PIE)
+KBUILD_CFLAGS	+= -Wno-unused-variable -Wno-unused-but-set-variable
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
