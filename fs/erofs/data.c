@@ -15,7 +15,6 @@ static void erofs_readendio(struct bio *bio)
 {
 	int i;
 	struct bio_vec *bvec;
-	blk_status_t err = bio->bi_status;
 
 	bio_for_each_segment_all(bvec, bio, i) {
 		struct page *page = bvec->bv_page;
@@ -23,10 +22,7 @@ static void erofs_readendio(struct bio *bio)
 		/* page is already locked */
 		DBG_BUGON(PageUptodate(page));
 
-		if (err)
-			SetPageError(page);
-		else
-			SetPageUptodate(page);
+		SetPageUptodate(page);
 
 		unlock_page(page);
 		/* page could be reclaimed now */
@@ -150,7 +146,7 @@ static inline struct bio *erofs_read_raw_page(struct bio *bio,
 	    /* not continuous */
 	    *last_block + 1 != current_block) {
 submit_bio_retry:
-		submit_bio(bio);
+		submit_bio(READ, bio);
 		bio = NULL;
 	}
 
@@ -223,10 +219,9 @@ submit_bio_retry:
 		bio = bio_alloc(GFP_NOIO, nblocks);
 
 		bio->bi_end_io = erofs_readendio;
-		bio_set_dev(bio, sb->s_bdev);
+		bio->bi_bdev = sb->s_bdev;
 		bio->bi_iter.bi_sector = (sector_t)blknr <<
 			LOG_SECTORS_PER_BLOCK;
-		bio->bi_opf = REQ_OP_READ;
 	}
 
 	err = bio_add_page(bio, page, PAGE_SIZE, 0);
@@ -257,7 +252,7 @@ has_updated:
 	/* if updated manually, continuous pages has a gap */
 	if (bio)
 submit_bio_out:
-		submit_bio(bio);
+		submit_bio(READ, bio);
 	return err ? ERR_PTR(err) : NULL;
 }
 
@@ -321,7 +316,7 @@ static int erofs_raw_access_readpages(struct file *filp,
 
 	/* the rare case (end in gaps) */
 	if (bio)
-		submit_bio(bio);
+		submit_bio(READ, bio);
 	return 0;
 }
 
@@ -363,11 +358,10 @@ static int check_direct_IO(struct inode *inode, struct iov_iter *iter,
 	return 0;
 }
 
-static ssize_t erofs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
+static ssize_t erofs_direct_IO(struct kiocb *iocb, struct iov_iter *iter, loff_t offset)
 {
 	struct address_space *mapping = iocb->ki_filp->f_mapping;
 	struct inode *inode = mapping->host;
-	loff_t offset = iocb->ki_pos;
 	int err;
 
 	err = check_direct_IO(inode, iter, offset);
@@ -375,7 +369,7 @@ static ssize_t erofs_direct_IO(struct kiocb *iocb, struct iov_iter *iter)
 		return err < 0 ? err : 0;
 
 	return __blockdev_direct_IO(iocb, inode, inode->i_sb->s_bdev, iter,
-				    erofs_get_block, NULL, NULL,
+				    offset, erofs_get_block, NULL, NULL,
 				    DIO_LOCKING | DIO_SKIP_HOLES);
 }
 

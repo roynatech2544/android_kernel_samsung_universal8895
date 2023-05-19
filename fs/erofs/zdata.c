@@ -747,7 +747,6 @@ static void z_erofs_vle_unzip_kickoff(void *ptr, int bios)
 static inline void z_erofs_vle_read_endio(struct bio *bio)
 {
 	struct erofs_sb_info *sbi = NULL;
-	blk_status_t err = bio->bi_status;
 	unsigned int i;
 	struct bio_vec *bvec;
 
@@ -765,13 +764,10 @@ static inline void z_erofs_vle_read_endio(struct bio *bio)
 		if (sbi)
 			cachemngd = erofs_page_is_managed(sbi, page);
 
-		if (err)
-			SetPageError(page);
-		else if (cachemngd)
+		if (cachemngd) {
 			SetPageUptodate(page);
-
-		if (cachemngd)
 			unlock_page(page);
+		}
 	}
 
 	z_erofs_vle_unzip_kickoff(bio->bi_private, -1);
@@ -812,7 +808,7 @@ static int z_erofs_decompress_pcluster(struct super_block *sb,
 		if (nr_pages > Z_EROFS_VMAP_GLOBAL_PAGES)
 			gfp_flags |= __GFP_NOFAIL;
 
-		pages = kvmalloc_array(nr_pages, sizeof(struct page *),
+		pages = kmalloc_array(nr_pages, sizeof(struct page *),
 				       gfp_flags);
 
 		/* fallback to global pagemap for the lowmem scenario */
@@ -1159,7 +1155,8 @@ static struct z_erofs_unzip_io *jobqueue_init(struct super_block *sb,
 		goto out;
 	}
 
-	iosb = kvzalloc(sizeof(*iosb), GFP_KERNEL | __GFP_NOFAIL);
+	iosb = kzalloc(sizeof(*iosb), GFP_KERNEL | __GFP_NOFAIL);
+
 	DBG_BUGON(!iosb);
 
 	/* initialize fields in the allocated descriptor */
@@ -1293,7 +1290,7 @@ repeat:
 
 		if (bio && force_submit) {
 submit_bio_retry:
-			submit_bio(bio);
+			submit_bio(READ, bio);
 			bio = NULL;
 		}
 
@@ -1301,11 +1298,10 @@ submit_bio_retry:
 			bio = bio_alloc(GFP_NOIO, BIO_MAX_PAGES);
 
 			bio->bi_end_io = z_erofs_vle_read_endio;
-			bio_set_dev(bio, sb->s_bdev);
+			bio->bi_bdev = sb->s_bdev;
 			bio->bi_iter.bi_sector = (sector_t)(first_index + i) <<
 				LOG_SECTORS_PER_BLOCK;
 			bio->bi_private = bi_private;
-			bio->bi_opf = REQ_OP_READ;
 
 			++nr_bios;
 		}
@@ -1327,7 +1323,7 @@ skippage:
 	} while (owned_head != Z_EROFS_PCLUSTER_TAIL);
 
 	if (bio)
-		submit_bio(bio);
+		submit_bio(READ, bio);
 
 	if (postsubmit_is_all_bypassed(q, nr_bios, force_fg))
 		return true;
