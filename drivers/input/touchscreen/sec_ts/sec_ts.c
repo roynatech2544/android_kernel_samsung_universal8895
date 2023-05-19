@@ -46,8 +46,6 @@ extern void epen_disable_mode(int mode);
 #if defined(CONFIG_FB)
 static int touch_fb_notifier_callback(struct notifier_block *self,
 		unsigned long event, void *data);
-extern int input_enable_device(struct input_dev *dev);
-extern int input_disable_device(struct input_dev *dev);
 #endif
 
 int sec_ts_read_information(struct sec_ts_data *ts);
@@ -3151,13 +3149,22 @@ static int touch_fb_notifier_callback(struct notifier_block *self,
 	if (ev && ev->data && event == FB_EVENT_BLANK) {
 		int *blank = (int *)ev->data;
 
-		if (*blank == FB_BLANK_UNBLANK)
-			input_enable_device(ts->input_dev);
-		else
-			input_disable_device(ts->input_dev);
+		switch (*blank) {
+			case FB_BLANK_UNBLANK:
+			case FB_BLANK_NORMAL:
+			case FB_BLANK_VSYNC_SUSPEND:
+			case FB_BLANK_HSYNC_SUSPEND:
+				sec_ts_input_open(ts->input_dev);
+				return NOTIFY_OK;
+			case FB_BLANK_POWERDOWN:
+				sec_ts_input_close(ts->input_dev);
+				return NOTIFY_OK;
+			default:
+				break;
+		}
 	}
 
-	return 0;
+	return NOTIFY_DONE;
 }
 #endif
 #endif
