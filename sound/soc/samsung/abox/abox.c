@@ -3090,9 +3090,9 @@ int abox_hw_params_fixup_helper(struct snd_soc_pcm_runtime *rtd,
 EXPORT_SYMBOL(abox_hw_params_fixup_helper);
 
 static struct pm_qos_request abox_pm_qos_int;
-static struct pm_qos_request abox_pm_qos_mif;
-static struct pm_qos_request abox_pm_qos_lit;
-static struct pm_qos_request abox_pm_qos_big;
+//static struct pm_qos_request abox_pm_qos_mif;
+//static struct pm_qos_request abox_pm_qos_lit;
+//static struct pm_qos_request abox_pm_qos_big;
 
 unsigned int abox_get_requiring_int_freq_in_khz(void)
 {
@@ -3344,7 +3344,7 @@ static void abox_change_mif_freq_work_func(struct work_struct *work)
 
 	dev_info(&data->pdev->dev, "%s(%u)\n", __func__, data->mif_freq);
 
-	pm_qos_update_request(&abox_pm_qos_mif, data->mif_freq);
+//	pm_qos_update_request(&abox_pm_qos_mif, data->mif_freq);
 }
 
 static void abox_request_mif_freq(struct device *dev, unsigned int mif_freq)
@@ -3354,7 +3354,7 @@ static void abox_request_mif_freq(struct device *dev, unsigned int mif_freq)
 	dev_info(dev, "%s(%u)\n", __func__, mif_freq);
 
 	data->mif_freq = mif_freq;
-	schedule_work(&data->change_mif_freq_work);
+//	schedule_work(&data->change_mif_freq_work);
 }
 
 static void abox_change_lit_freq_work_func(struct work_struct *work)
@@ -3379,10 +3379,10 @@ static void abox_change_lit_freq_work_func(struct work_struct *work)
 	}
 
 	data->lit_freq = freq;
-	pm_qos_update_request(&abox_pm_qos_lit, data->lit_freq);
+//	pm_qos_update_request(&abox_pm_qos_lit, data->lit_freq);
 
-	dev_info(dev, "pm qos request little: %dkHz\n",
-			pm_qos_request(abox_pm_qos_lit.pm_qos_class));
+//	dev_info(dev, "pm qos request little: %dkHz\n",
+//			pm_qos_request(abox_pm_qos_lit.pm_qos_class));
 }
 
 int abox_request_lit_freq(struct device *dev, struct abox_data *data,
@@ -3414,7 +3414,7 @@ int abox_request_lit_freq(struct device *dev, struct abox_data *data,
 		return -ENOMEM;
 	}
 
-	schedule_work(&data->change_lit_freq_work);
+//	schedule_work(&data->change_lit_freq_work);
 
 	return 0;
 }
@@ -3441,10 +3441,10 @@ static void abox_change_big_freq_work_func(struct work_struct *work)
 	}
 
 	data->big_freq = freq;
-	pm_qos_update_request(&abox_pm_qos_big, data->big_freq);
+//	pm_qos_update_request(&abox_pm_qos_big, data->big_freq);
 
-	dev_info(dev, "pm qos request big: %dkHz\n",
-			pm_qos_request(abox_pm_qos_big.pm_qos_class));
+//	dev_info(dev, "pm qos request big: %dkHz\n",
+//			pm_qos_request(abox_pm_qos_big.pm_qos_class));
 }
 
 int abox_request_big_freq(struct device *dev, struct abox_data *data,
@@ -3476,7 +3476,7 @@ int abox_request_big_freq(struct device *dev, struct abox_data *data,
 		return -ENOMEM;
 	}
 
-	schedule_work(&data->change_big_freq_work);
+//	schedule_work(&data->change_big_freq_work);
 
 	return 0;
 }
@@ -5359,9 +5359,9 @@ static int samsung_abox_probe(struct platform_device *pdev)
 		data->rdma_synchronizer[i] = i;
 	INIT_WORK(&data->ipc_work, abox_process_ipc);
 	INIT_WORK(&data->change_cpu_gear_work, abox_change_cpu_gear_work_func);
-	INIT_WORK(&data->change_mif_freq_work, abox_change_mif_freq_work_func);
-	INIT_WORK(&data->change_lit_freq_work, abox_change_lit_freq_work_func);
-	INIT_WORK(&data->change_big_freq_work, abox_change_big_freq_work_func);
+//	INIT_WORK(&data->change_mif_freq_work, abox_change_mif_freq_work_func);
+//	INIT_WORK(&data->change_lit_freq_work, abox_change_lit_freq_work_func);
+//	INIT_WORK(&data->change_big_freq_work, abox_change_big_freq_work_func);
 	INIT_WORK(&data->change_hmp_boost_work,
 			abox_change_hmp_boost_work_func);
 	INIT_WORK(&data->register_component_work,
@@ -5547,9 +5547,9 @@ static int samsung_abox_probe(struct platform_device *pdev)
 	abox_cpu_power(false);
 
 	pm_qos_add_request(&abox_pm_qos_int, PM_QOS_DEVICE_THROUGHPUT, 0);
-	pm_qos_add_request(&abox_pm_qos_mif, PM_QOS_BUS_THROUGHPUT, 0);
-	pm_qos_add_request(&abox_pm_qos_lit, PM_QOS_CLUSTER0_FREQ_MIN, 0);
-	pm_qos_add_request(&abox_pm_qos_big, PM_QOS_CLUSTER1_FREQ_MIN, 0);
+//	pm_qos_add_request(&abox_pm_qos_mif, PM_QOS_BUS_THROUGHPUT, 0);
+//	pm_qos_add_request(&abox_pm_qos_lit, PM_QOS_CLUSTER0_FREQ_MIN, 0);
+//	pm_qos_add_request(&abox_pm_qos_big, PM_QOS_CLUSTER1_FREQ_MIN, 0);
 
 	abox_gic_register_irq_handler(data->pdev_gic, abox_irq_handler, pdev);
 
@@ -5607,9 +5607,9 @@ static int samsung_abox_remove(struct platform_device *pdev)
 	abox_runtime_suspend(dev);
 #endif
 	pm_qos_remove_request(&abox_pm_qos_int);
-	pm_qos_remove_request(&abox_pm_qos_mif);
-	pm_qos_remove_request(&abox_pm_qos_lit);
-	pm_qos_remove_request(&abox_pm_qos_big);
+//	pm_qos_remove_request(&abox_pm_qos_mif);
+//	pm_qos_remove_request(&abox_pm_qos_lit);
+//	pm_qos_remove_request(&abox_pm_qos_big);
 	snd_soc_unregister_codec(dev);
 	iommu_unmap(data->iommu_domain, IOVA_DRAM_FIRMWARE, DRAM_FIRMWARE_SIZE);
 #ifdef EMULATOR
