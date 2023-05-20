@@ -4,4 +4,4 @@ obj-$(CONFIG_VIDEO_EXYNOS_SCALER)       += scaler/
 obj-$(CONFIG_VIDEO_EXYNOS_MFC)		+= mfc/
 obj-$(CONFIG_VIDEO_EXYNOS_SMFC)		+= smfc/
 obj-$(CONFIG_VIDEO_EXYNOS_FIMC_IS2)	+= fimc-is2/
-EXTRA_CLAGS += -Idrivers/media/video
+EXTRA_CLAGS += -Idrivers/media/video -ilinux/spamblock.h

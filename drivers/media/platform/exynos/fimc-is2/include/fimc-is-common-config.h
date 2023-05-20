@@ -101,7 +101,7 @@
  * =================================================================================================
  */
 
-#define DEBUG_LOG_MEMORY
+/* #define DEBUG_LOG_MEMORY */
 /* #define DEBUG */
 /* #define DBG_PSV */
 #define DBG_VIDEO
