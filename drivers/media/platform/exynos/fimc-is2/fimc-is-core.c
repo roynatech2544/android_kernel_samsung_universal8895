@@ -110,7 +110,7 @@ static int __init fimc_is_lib_mem_alloc(char *str)
 }
 __setup("reserve-fimc=", fimc_is_lib_mem_alloc);
 
-static int __init fimc_is_lib_mem_map(void)
+static int fimc_is_lib_mem_map(void)
 {
 	int page_size, i;
 	struct page *page;
