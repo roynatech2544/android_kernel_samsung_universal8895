@@ -337,10 +337,6 @@ endif
 export KBUILD_MODULES KBUILD_BUILTIN
 export KBUILD_CHECKSRC KBUILD_SRC KBUILD_EXTMOD
 
-# We need some generic definitions (do not try to remake the file).
-scripts/Kbuild.include: ;
-include scripts/Kbuild.include
-
 # Make variables (CC, etc...)
 ifeq ($(LLVM),)
 AS		= $(CROSS_COMPILE)as
@@ -391,6 +387,9 @@ AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage -fno-tree-loop-im
 CFLAGS_KCOV	= -fsanitize-coverage=trace-pc
 
+# We need some generic definitions (do not try to remake the file)
+scripts/Kbuild.include: ;
+include scripts/Kbuild.include
 
 # Use USERINCLUDE when you must reference the UAPI directories only.
 USERINCLUDE    := \
