@@ -160,6 +160,7 @@ struct s2mpb02_led {
 	int irda_off;
 	int torch_table_enable;
 	int torch_table[TORCH_STEP];
+	int last_sysfs_input;
 };
 
 struct s2mpb02_led_platform_data {

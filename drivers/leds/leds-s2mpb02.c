@@ -361,7 +361,9 @@ ssize_t s2mpb02_store(struct device *dev,
 		led_set(global_led_datas[S2MPB02_TORCH_LED_1], S2MPB02_LED_TURN_WAY_GPIO);
 	} else {
 		pr_info("[LED]%s , Invalid value:%d\n", __func__, value);
+		return -EINVAL;
 	}
+	global_led_datas[S2MPB02_TORCH_LED_1]->data->last_sysfs_input = value;
 
 	if (value <= 0) {
 		s2mpb02_set_bits(global_led_datas[S2MPB02_TORCH_LED_1]->i2c, S2MPB02_REG_FLED_CUR1,
@@ -395,8 +397,7 @@ ssize_t s2mpb02_show(struct device *dev,
 		return -1;
 	}
 
-	pr_info("[LED] %s , MAX STEP TORCH_LED:%d\n", __func__, S2MPB02_TORCH_OUT_I_MAX - 1);
-	return sprintf(buf, "%d\n", S2MPB02_TORCH_OUT_I_MAX - 1);
+	return sprintf(buf, "%d\n", global_led_datas[S2MPB02_TORCH_LED_1]->data->last_sysfs_input);
 }
 
 #ifdef CONFIG_LEDS_IRIS_IRLED_CERTIFICATE_SUPPORT
