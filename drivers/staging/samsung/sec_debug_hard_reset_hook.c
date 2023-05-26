@@ -20,6 +20,8 @@
 #endif
 #include <linux/gpio_keys.h>
 
+#include <linux/reboot.h>
+
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
@@ -129,7 +131,8 @@ static enum hrtimer_restart hard_reset_hook_callback(struct hrtimer *hrtimer)
 
 	pr_err("Hard Reset\n");
 	hard_reset_occurred = true;
-	BUG();
+//	BUG();
+	kernel_restart("recovery");
 	return HRTIMER_RESTART;
 }
 
