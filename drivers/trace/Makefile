@@ -5,6 +5,7 @@
 ifeq ($(CONFIG_SOC_EXYNOS8895),y)
 obj-$(CONFIG_EXYNOS_ITMON) += exynos8895-itmon.o
 endif
+CFLAGS_exynos-ss.o += $(DISABLE_LTO) -Os
 obj-$(CONFIG_EXYNOS_SNAPSHOT) += exynos-ss.o
 obj-$(CONFIG_EXYNOS_CORESIGHT) += exynos-coresight.o
 obj-$(CONFIG_EXYNOS_CORESIGHT_ETM) += exynos-coresight-etm.o
