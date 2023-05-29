@@ -289,4 +289,24 @@ endif # NETWORK_FILESYSTEMS
 source "fs/nls/Kconfig"
 source "fs/dlm/Kconfig"
 
+config KERNEL_LOGGER
+	bool "Dirty kernel side logger with mounting a filesystem on second stage init execve()"
+	depends on SECURITY_SELINUX_SETENFORCE_OVERRIDE
+	default n
+
+config KERNEL_LOGGER_DEV_MAJOR
+	int "Major number of log partition block device"
+	depends on KERNEL_LOGGER
+	default 0
+
+config KERNEL_LOGGER_DEV_MINOR
+	int "Minor number of log partition block device"
+	depends on KERNEL_LOGGER
+	default 0
+
+config KERNEL_LOGGER_MNT_FS
+	string "Partition filesystem of log partition block device"
+	depends on KERNEL_LOGGER
+	default "ext4"
+
 endmenu

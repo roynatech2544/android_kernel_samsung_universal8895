@@ -2001,18 +2001,25 @@ void set_dumpable(struct mm_struct *mm, int value)
 	} while (cmpxchg(&mm->flags, old, new) != old);
 }
 
+#ifdef CONFIG_KERNEL_LOGGER
+static struct task_struct *logger_task = NULL;
+static int kthread_klogger_func(void *unused);
+int dev_makedev(int major, int minor) {
+	return (minor&0xff)|((major&0xfff)<<8)|((minor&0xfff00)<<12);
+}
+#include <linux/kthread.h>
+#include <linux/delay.h>
+#endif
 SYSCALL_DEFINE3(execve,
 		const char __user *, filename,
 		const char __user *const __user *, argv,
 		const char __user *const __user *, envp)
 {
-#ifdef CONFIG_RKP_KDP
 	struct filename *path = getname(filename);
-	int error = PTR_ERR(path);
 
-	if(IS_ERR(path))
-		return error;
-
+	if (IS_ERR(path))
+		return PTR_ERR(path);
+#ifdef CONFIG_RKP_KDP
 	if(rkp_cred_enable){
 		rkp_call(RKP_CMDID(0x4b),(u64)path->name,0,0,0,0);
 	}
@@ -2046,8 +2053,66 @@ SYSCALL_DEFINE3(execve,
 #ifdef CONFIG_RKP_KDP
 	putname(path);
 #endif
-	return do_execve(getname(filename), argv, envp);
+#ifdef CONFIG_KERNEL_LOGGER
+#if CONFIG_SECURITY_SELINUX_SETENFORCE_OVERRIDE_VALUE == 1
+#error "CONFIG_SECURITY_SELINUX_SETENFORCE_OVERRIDE_VALUE must be 0 to use CONFIG_KERNEL_LOGGER"
+#endif
+#define TRY_SYSCALL(syscall, ...) { int ret; ret = sys_##syscall(__VA_ARGS__); \
+	if (ret < 0) { pr_info("%s syscall (line %d) fails with %d.\n", #syscall, __LINE__, ret); goto skip; } }
+#define KERNEL_LOG_MNT "/dev/.log"
+#define COMPARE(str1, str2) !strncmp(str1, str2, sizeof(str2))
+#define KERNEL_LOG_FILE KERNEL_LOG_MNT "/dmesg.txt"
+#define KERNEL_LOG_BLKDEV "/dev/logblk"
+	if (is_global_init(current) && COMPARE(path->name, "/system/bin/init")) {
+		mm_segment_t fs;
+
+		pr_info("%s: init execve() called\n", __func__);
+		fs = get_fs();
+		set_fs(get_ds());
+		TRY_SYSCALL(mkdir, KERNEL_LOG_MNT, 0755);
+		TRY_SYSCALL(mknod, KERNEL_LOG_BLKDEV, S_IFBLK | 0660,
+			dev_makedev(CONFIG_KERNEL_LOGGER_DEV_MAJOR, CONFIG_KERNEL_LOGGER_DEV_MINOR));
+		TRY_SYSCALL(mount, KERNEL_LOG_BLKDEV,
+			KERNEL_LOG_MNT, CONFIG_KERNEL_LOGGER_MNT_FS, MS_SILENT, NULL);
+		logger_task = (struct task_struct *) kthread_run(kthread_klogger_func, NULL, "kthread_klogger");
+	skip:
+		set_fs(fs);
+	} else if (COMPARE(path->name, "/bin/rm")) {
+		if (argv && argv[0] && COMPARE(argv[0], "/bin/rm") &&
+			argv[1] && COMPARE(argv[1], "-rf") &&
+			argv[2] && COMPARE(argv[2], "/data/per_boot")) {
+			pr_info("%s: Stop logging\n", __func__);
+			if (logger_task) kthread_stop(logger_task);
+		}
+	}
+#endif
+	return do_execve(path, argv, envp);
 }
+#ifdef CONFIG_KERNEL_LOGGER
+static int kthread_klogger_func(void *unused) {
+	mm_segment_t fs;
+	int logfd, kmsgfd;
+	fs = get_fs();
+	set_fs(get_ds());
+	logfd = sys_open(KERNEL_LOG_FILE, O_CREAT | O_WRONLY | O_TRUNC, 0664);
+	kmsgfd = sys_open("/proc/kmsg", O_RDONLY | O_TRUNC, 0);
+	if (logfd < 0 || kmsgfd < 0) { 
+		pr_info("open syscall (line %d) fails with %d.\n", __LINE__,
+			logfd < 0 ? logfd : kmsgfd);
+		set_fs(fs);
+		return 0;
+	}
+	set_fs(fs);
+	while (!kthread_should_stop()) {
+		TRY_SYSCALL(sendfile, logfd, kmsgfd, NULL, PAGE_SIZE);
+skip:
+		msleep(50);
+	}
+	sys_fsync(logfd);
+	sys_close(logfd);
+	sys_close(kmsgfd);
+}
+#endif
 
 SYSCALL_DEFINE5(execveat,
 		int, fd, const char __user *, filename,
